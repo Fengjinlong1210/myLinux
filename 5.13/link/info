@@ -1,0 +1,4 @@
+创建软硬链接
+
+硬链接：ln filename newfile name
+
