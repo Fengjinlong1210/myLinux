@@ -34,8 +34,8 @@ int main()
         ssize_t n = read(rfd, buffer, sizeof(buffer) - 1);
         if(n > 0)
         {
-            buffer[n] = 0;
-            cout << "I get :" << buffer << endl;
+            //buffer[n] = 0;
+            cout << "I get :" << buffer << endl;;
             //printf("%s", buffer);
             //fflush(stdout);
         }

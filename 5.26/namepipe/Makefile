@@ -1,11 +1,11 @@
 .PHONY:all
-all:server client
+all:newserver newclient
 
-server:server.cc
+newserver:newserver.cc
 	g++ -o $@ $^ -std=c++11
-client:client.cc
+newclient:newclient.cc
 	g++ -o $@ $^ -std=c++11
 
 .PHONY:clean
 clean:
-	rm -f server client
+	rm -f newnewserver newclient

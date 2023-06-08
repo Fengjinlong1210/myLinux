@@ -26,8 +26,9 @@ int main()
         //获取输入
         cout << "向服务器发送信息：";
         fgets(buffer, sizeof(buffer), stdin);
-        buffer[strlen(buffer) - 1] = 0;
         
+        buffer[strlen(buffer) - 1] = 0;
+        //cout << buffer;
         if(strcasecmp(buffer, "quit") == 0)
         {
             break;

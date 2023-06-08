@@ -2,6 +2,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <cerrno>
 #include <unistd.h>
 #include <cstring>
@@ -10,7 +11,11 @@
 using namespace std;
 
 #define PATHNAME "." //可自行设置
-#define PROJ_ID 66
+#define PROJ_ID 0x6666
+
+#define SERVER 0
+#define CLIENT 1
+
 const int getsize = 4096;
 
 //先根据路径和项目id获取一个key值
@@ -51,6 +56,8 @@ static int _Shm(key_t key, size_t size, int shmflg)
 //server创建shm
 int CreateShm(key_t key, size_t size)
 {
+    umask(0);
+    //return _Shm(key, size, IPC_CREAT | IPC_EXCL | 0666);
     return _Shm(key, size, IPC_CREAT | IPC_EXCL);
 }
 
@@ -72,8 +79,14 @@ char* AttachShm(int shmid)
 void DetachShm(char* start)
 {
     int ret = shmdt(start);
-    assert(ret != -1);
-    (void)ret;
+    if(ret == -1)
+    {
+        cout << "shmdt error :" << errno << ":" << strerror(errno) << endl;
+    }
+    else
+    {
+        cout << "取消关联成功" << endl;
+    }
 }
 
 //删除共享内存
@@ -84,3 +97,44 @@ void DelShm(int shmid)
     assert(ret != -1);
     (void)ret;
 }
+
+class Init
+{
+public:
+    Init(int id):_id(id)
+    {
+        int k = GetKey();
+        cout << "获取key成功" << endl;
+        if(id == SERVER)
+        {
+           _shmid = CreateShm(k, getsize);
+           cout << "创建shm成功" << endl;
+        }
+        else
+        {
+            _shmid = GetShm(k, getsize);
+            cout << "获取shm成功" << endl;
+        }
+        _start = AttachShm(_shmid);
+        cout << "关联进程成功" << endl;
+    }
+
+    char* GetStart()
+    {
+        return _start;
+    }
+
+    ~Init()
+    {
+        DetachShm(_start);
+
+        if(_id == SERVER)
+        {
+            DelShm(_shmid);
+        }
+    }
+private:
+    int _id;
+    char* _start;
+    int _shmid;
+};
