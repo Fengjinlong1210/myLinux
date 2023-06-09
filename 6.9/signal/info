@@ -1,0 +1,11 @@
+使用signal接口
+
+typedef void(*signalhandler_t)(int);
+
+signalhandler_t signal(int signum, signalhandler_t handler);
+
+定义一个参数为int的函数指针
+signal函数将signum对应的信号执行方法更换成handler函数
+当信号生效时，会执行handler函数
+
+该函数返回以前的signal handler

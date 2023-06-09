@@ -1,0 +1,4 @@
+了解alarm接口
+unsigned int alarm(unsigned int seconds);
+
+在second秒后，alarm向进程发送一个SIGALRM信号，默认情况下，SIGALRM会退出程序
