@@ -1,0 +1,4 @@
+Core Dump: 当进程发生异常时, OS对核心部分代码进行转储, 将进程的相关数据dump到磁盘中
+核心转储方便异常后进行调试, 通过gdb自动定位问题代码
+
+通过waitpid获取core dump falg
