@@ -1,0 +1,4 @@
+通过接口获取pending信号集
+
+// int sigpending(sigset_t* set);
+获取pending信号集, set是输出型参数

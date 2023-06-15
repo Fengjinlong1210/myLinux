@@ -1,0 +1,26 @@
+int sigaction(int signo, const struct sigaction *act, const sigaction *oldact);
+
+使用该函数也可以改变进程的信号集
+
+//参数中的结构体如下:
+struct sigaction
+{
+    //捕捉方法
+    void (*sa_handler)(int);
+
+    void (*sa_sigaction)(int, siginfo_t *, void *);
+
+    //信号屏蔽字
+    sigset_t sa_mask;
+
+    int sa_flags;
+
+    //已经过时,不应该使用
+    void (*sa_restorer)(void);
+
+};
+
+当某个信号的处理函数被调用时,内核自动将当前信号加入进程的信号屏蔽字,当信号处理函数返回时自动恢复原来
+的信号屏蔽字,这样就保证了在处理某个信号时,如果这种信号再次产生,那么 它会被阻塞到当前处理结束为止。 如果
+在调用信号处理函数时,除了当前信号被自动屏蔽之外,还希望自动屏蔽另外一些信号,则用sa_mask字段说明这些需
+要额外屏蔽的信号,当信号处理函数返回时自动恢复原来的信号屏蔽字
