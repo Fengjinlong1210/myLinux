@@ -1,0 +1,20 @@
+使用线程库中的接口创建和使用线程
+
+线程创建函数
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(*start_routine)(void *), void *arg);
+
+第一个参数pthread_t就是unsigned long int类型, 是提前创建好的参数
+    新线程创建好时, 该参数指向的内存单元被设置为新线程的id
+第二个参数用来设置线程属性, 通常被设置为0
+第三个参数是回调函数, 线程被创建后会从该函数开始运行
+第四个参数是回调函数的参数, 用来给回调函数传参
+
+返回值: 成功返回0, 否则返回错误码
+
+获取调用该函数的线程id
+pthread_t pthread_self(void);
+
+回收线程
+int pthread_join(pthread_t thread, void **retval);
+第一个参数传线程id, 第二个参数是输出型参数, 用来获取线程的返回值

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include "comm.hpp"
+#include <string>
 using namespace std;
 
 int main()
@@ -21,11 +22,14 @@ int main()
 
     //通信
     char buffer[1024];
-    while(1)
+    string str;
+    while(getline(cin, str);)
     {
         //获取输入
+        
         cout << "向服务器发送信息：";
-        fgets(buffer, sizeof(buffer), stdin);
+        
+        
         
         buffer[strlen(buffer) - 1] = 0;
         //cout << buffer;
@@ -34,7 +38,8 @@ int main()
             break;
         }
         //向文件写入
-        int wrret = write(wfd, buffer, sizeof(buffer));
+        //int wrret = write(wfd, buffer, sizeof(buffer));
+        int wrret = write(wfd, str.c_str(), sizeof(str));
         if(wrret < 0)
         {
             cout << "error:" << strerror(errno) << endl;
