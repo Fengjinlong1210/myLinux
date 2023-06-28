@@ -1,0 +1,7 @@
+线程分离
+    默认情况下, 线程是joinable的
+    线程退出后, 需要对其进行pthread_join操作, 否则会内存泄漏
+    如果不关心线程的返回值, 可以不通过pthread_join回收
+    可以通过pthread_detach使线程进行分离, 告诉系统自动释放线程资源
+
+int pthread_detach(pthread_t pthread);

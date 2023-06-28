@@ -33,6 +33,7 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "typeinfo": "cpp",
-        "info": "cpp"
+        "info": "cpp",
+        "thread": "cpp"
     }
 }
