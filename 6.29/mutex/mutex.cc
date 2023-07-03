@@ -14,7 +14,7 @@ void* pthread_func(void* args)
     char* name = static_cast<char*>(args);
     while(1)
     {
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex); //RAII风格的锁
         if(ticket_num > 0)
         {
             cout << "我是" << name << ", 我抢到票了, 剩余" << ticket_num << endl;
