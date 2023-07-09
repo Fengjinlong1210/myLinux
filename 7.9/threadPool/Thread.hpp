@@ -33,7 +33,7 @@ public:
         return _name;
     }
 
-    ThreadStatus status()
+    ThreadStatus get_status()
     {
         return _status;
     }
@@ -45,7 +45,6 @@ public:
     {
         Thread* _this = (Thread*)args;
         
-
         (*_this)();//仿函数调用传入的回调
         return nullptr;
     }
@@ -54,6 +53,7 @@ public:
     {
         if(_thread_func)
         {
+            //cout << name() << ":" 
             _thread_func(_args);
         }
     }
