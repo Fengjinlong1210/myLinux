@@ -64,12 +64,12 @@ public:
         }
     }
 
-    int Accept(string* client_ip, uint16_t* client_port)
+    int Accept(string *client_ip, uint16_t *client_port)
     {
         struct sockaddr_in client;
         socklen_t length;
-        int n = accept(_sock, (sockaddr*)&client, &length);
-        if(n < 0)
+        int n = accept(_sock, (sockaddr *)&client, &length);
+        if (n < 0)
         {
             logMessage(Fatal, "accept socket error, code: %d, error message: %s", errno, strerror(errno));
         }
@@ -81,7 +81,7 @@ public:
         return n;
     }
 
-    int Connect(const string& server_ip, const uint16_t& server_port)
+    int Connect(const string &server_ip, const uint16_t &server_port)
     {
         struct sockaddr_in server;
         memset(&server, 0, sizeof(server));
@@ -89,7 +89,7 @@ public:
         server.sin_port = htons(server_port);
         server.sin_family = AF_INET;
 
-        return connect(_sock, (sockaddr*)&server, sizeof(server));
+        return connect(_sock, (sockaddr *)&server, sizeof(server));
     }
 
     int get_socket()
@@ -97,12 +97,16 @@ public:
         return _sock;
     }
 
-    ~sock()
+    void Close()
     {
-        if(_sock != defaultsock)
+        if (_sock != defaultsock)
         {
             close(_sock);
         }
+    }
+
+    ~sock()
+    {
     }
 
 private:

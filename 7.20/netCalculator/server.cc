@@ -39,11 +39,13 @@ Response calculate(const Request &req)
         resp._code = 3;
         break;
     }
+    return resp;
 }
 
 int main()
 {
     unique_ptr<tcp_server> p_server(new tcp_server(calculate, 8888));
     p_server->init_server();
+    p_server->start_server();
     return 0;
 }

@@ -40,7 +40,7 @@ namespace Fjl
     {
     public:
         tcp_server(func_t func, uint16_t port)
-            : _port(port)
+            : _port(port), _func(func)
         {
         }
         void init_server()
@@ -72,17 +72,39 @@ namespace Fjl
 
         void serviceIO(int sock, const std::string &ip, const uint16_t port)
         {
-            // 1.read/recv, 设计一个协议, 保证能够完整的读取到一个string
-            // 循环式读取, 一边读取, 一边检测数据完整性
-            
-            // 2.假设已经读到了完整的字符串, 需要对字符串进行反序列化
-            // 也就是解析字符串内容
+            std::string inbuffer; // 缓冲区, 充当输出型参数
+            while (1)
+            {
+                // 1.read/recv, 设计一个协议, 保证能够完整的读取到一个string
+                // 循环式读取, 一边读取, 一边检测数据完整性
+                string package;
+                int n = readPackage(sock, inbuffer, &package); // n代表读取的长度
+                if (n == -1)
+                    break;
+                else if (n == 0) // 读取不完整, 需要继续读取
+                    continue;
+                else // 读取完整
+                {
+                    // 1. 获取报文的有效载荷, 移除报头
+                    package = removeHeader(package, n);
 
-            // 3.对读取的数据进行处理
+                    // 2.假设已经读到了完整的字符串, 需要对字符串进行反序列化
+                    // 也就是解析字符串内容
+                    Request req;
+                    req.deserialize(package); // 把package中的内容提取, 转化成结构体
 
-            // 4.对处理后的数据进行序列化, 形成字符串,
+                    // 3.对读取的数据进行处理
+                    Response resp = _func(req);
 
-            // 5.将序列化结果发送到网络, 返回给客户端
+                    // 4.对处理后的数据进行序列化, 形成字符串,
+                    string send_str;
+                    resp.serialize(&send_str);
+
+                    // 5.将序列化结果添加报头后, 发送到网络, 返回给客户端
+                    send_str = addHeader(send_str);
+                    send(sock, send_str.c_str(), send_str.size(), 0);
+                }
+            }
         }
 
     private:
@@ -91,6 +113,8 @@ namespace Fjl
             pthread_detach(pthread_self());
             thread_data *ptd = static_cast<thread_data *>(args);
             ptd->_p_svr->serviceIO(ptd->_sock, ptd->_ip, ptd->_port);
+            logMessage(Info, "client quit, client: [%s-%d]", ptd->_ip.c_str(), ptd->_port);
+
             delete ptd;
             return nullptr;
         }
@@ -98,6 +122,6 @@ namespace Fjl
     private:
         sock _listensock;
         uint16_t _port;
-        func_t func;
+        func_t _func;
     };
 }
