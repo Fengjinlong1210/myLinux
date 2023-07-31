@@ -82,7 +82,7 @@ private:
         pthread_detach(pthread_self());
         threadData *ptd = static_cast<threadData *>(args);
         ptd->_psvr->handlerHttpRequest(ptd->_sock);
-        close(ptd->_sock);
+        //close(ptd->_sock);
         delete ptd;
         return nullptr;
     }

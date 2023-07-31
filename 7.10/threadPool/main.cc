@@ -14,11 +14,10 @@ int main()
 
     // pool_ptr->startRunning();
     // pool_ptr->check();//    检查线程是否运行
-
     auto instance = threadPool<Task>::get_instance();
 
     srand((unsigned int)time(nullptr));
-    while(1)
+    while(true)
     {
         int num1 = rand() % 100 + 1;
         int num2 = rand() % 100 + 1;
@@ -32,4 +31,5 @@ int main()
         sleep(1);
     }
     return 0;
+
 }

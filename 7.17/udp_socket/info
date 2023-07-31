@@ -1,0 +1,59 @@
+/*
+    网络套接字程序, 创建一个服务端, 一个客户端
+    服务端接受客户端发来的信息, 然后再将消息经过处理后返回给客户端
+
+    服务端:
+    1.创建套接字, 对套接字进行初始化
+    2.bind套接字socket以及IP和端口号
+      服务端需要指定IP地址和端口号
+    3.开始运行时, 接受客户端发来的信息, 使用recvfrom接口
+    4.再使用sendto接口把接收到的信息处理后返回客户端
+
+    客户端:
+    1.明确要发送信息的客户端IP及端口号
+    2.创建套接字
+    3.客户端不需要自己bind, 在发送时OS回自动绑定
+    4.向服务器发送信息同时接受返回的信息
+*/
+
+
+#pragma once
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <cerrno>
+#include <cstdio>
+struct sockaddr_in      
+  {
+    __SOCKADDR_COMMON (sin_);       //宏, 用来连接名字
+    in_port_t sin_port;			/* Port number.  */ //端口号
+    struct in_addr sin_addr;		/* Internet address.  */  //IP地址
+
+    /* Pad to size of `struct sockaddr'.  */
+    unsigned char sin_zero[sizeof (struct sockaddr) -   //占位符
+			   __SOCKADDR_COMMON_SIZE -
+			   sizeof (in_port_t) -
+			   sizeof (struct in_addr)];
+  };
+
+//接口介绍
+
+
+ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
+                        struct sockaddr *src_addr, socklen_t *addrlen);
+  //第一个参数是套接字对应的文件描述符, 第二个参数表示缓冲区, 存放从socket中读取的数据
+  //第三个参数是缓冲区大小, 要保留一个字节来存放'\0', 第四个参数为0表示阻塞式等待
+  //第五第六个参数是输出型参数, 接受发送数据的客户端的socket信息以及大小
+
+size_t sendto(int sockfd, const void *buf, size_t len, int flags,
+                      const struct sockaddr *dest_addr, socklen_t addrlen);
+  // 参数与recv 差不多, 但是要传入对应的套接字结构体
+
+FILE* popen(const char* command, const char* type);
+// 该函数在内部创建子进程, 执行command命令, 将执行的结果通过文件指针返回
+// command 要让子进程执行的命令
+// type是对返回的FILE的操作类型, read, write, append
+//使用后, 要用pclose关闭文件
