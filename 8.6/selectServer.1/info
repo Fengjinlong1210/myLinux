@@ -1,0 +1,47 @@
+使用select接口实现多路转接IO
+select是用来监测多个文件描述符的状态变化的, 等待多个fd
+哪一个或哪些fd准备就绪, 需要让用户知道
+程序会停在select这里等待, 直到被监视的文件描述符有一个或多个发生了状态改变
+int select(int nfds, fd_set *readfds, fd_set *writefds,
+           fd_set *exceptfds, struct timeval *timeout);
+nfds是最大的那个描述符+1
+readfds是可读文件描述符的集合
+writefds是可写文件描述符的集合
+exceptfds是异常文件描述符的集合
+这些位图用来进行用户和内核之间的信息传递
+用户需要告诉内核, 要关心哪些文件描述符
+内核需要告诉用户, 需要关心的文件描述符有哪些已经准备就绪
+
+timeout是timeval结构, 用来设置等待时间
+设置为NULL, 表示阻塞式等待
+设置为{0, 0}, 表示非阻塞等待
+设置为{5, 0}, 表示5秒以内阻塞等待, 否则返回timeout
+
+返回值
+ret > 0, 有ret个fd准备就绪
+ret == 0, timeout
+ret < 0, 等待失败
+
+void FD_CLR(int fd, fd_set *set);
+int  FD_ISSET(int fd, fd_set *set);
+void FD_SET(int fd, fd_set *set);
+void FD_ZERO(fd_set *set);
+
+/* fd_set for select and pselect.  */
+typedef struct
+  {
+    /* XPG4.2 requires this member name.  Otherwise avoid the name
+       from the global namespace.  */
+#ifdef __USE_XOPEN
+    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];
+# define __FDS_BITS(set) ((set)->fds_bits)
+#else
+    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];
+# define __FDS_BITS(set) ((set)->__fds_bits)
+#endif
+  } fd_set;     //fd_set本质是一个位图结构
+
+struct timeval {
+	__kernel_time_t		tv_sec;		/* seconds */
+	__kernel_suseconds_t	tv_usec;	/* microseconds */
+};  

@@ -1,0 +1,13 @@
+通过fcntl接口设置标准输入为非阻塞
+在等待输入的过程中仍可以执行其他任务
+int fcntl(int fd, int cmd, ... /* arg */ );
+fcntl有五种功能
+复制一个现有的描述符(cmd=F_DUPFD).
+获得/设置文件描述符标记(cmd=F_GETFD或F_SETFD).
+获得/设置文件状态标记(cmd=F_GETFL或F_SETFL).
+获得/设置异步I/O所有权(cmd=F_GETOWN或F_SETOWN).
+获得/设置记录锁(cmd=F_GETLK,F_SETLK或F_SETLKW)
+
+
+第一次调用fcntl()获取文件状态标记
+第二次调用对文件标记进行修改
