@@ -1,0 +1,13 @@
+使用poll实现多路转接 
+int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+struct pollfd
+{
+    int fd;        /* file descriptor */
+    short events;  /* requested events */
+    short revents; /* returned events */
+};
+
+第一个参数是使用pollfd的数组, 第二个参数是数组的大小, 第三个参数是设置阻塞/非阻塞/超时时间
+每一个poll结构体都维护了一个fd, 以及请求和返回的事件
+events表示要求内核关心的事件
+revents表示内核返回的事件
