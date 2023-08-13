@@ -1,0 +1,13 @@
+#pragma once
+enum
+{
+    USAGE_ERR = 1,
+    SOCKET_ERROR,
+    BIND_ERROR,
+    LISTEN_ERROR,
+    CONNECT_ERROR,
+    SETSID_ERROR,
+    EPOLL_CREATE_ERROR,
+    EPOLL_CTL_ERROR,
+    EPOLL_CTL_ADD_ERR
+};
