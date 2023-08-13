@@ -116,7 +116,7 @@ int main(int argc, char **argv)
         {
             // 5.读取成功后, 去掉报头
             package = removeHeader(package, n);
-
+            logMessage(Debug, "read package done");
             // 6.反序列化并输出
             Response resp;
             resp.deserialize(package);

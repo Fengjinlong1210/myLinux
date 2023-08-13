@@ -24,14 +24,19 @@ namespace protocol
         int n = recv(sock, buffer, sizeof(buffer), 0);
         if (n <= 0)
             return -1; // 读取错误
-
+        logMessage(Debug, "return 1");
         buffer[n] = 0;
         inbuffer += buffer; // 把新读取到的内容放在外面的缓冲区中
         cout << "read 中 inbuffer: " << inbuffer << endl;
 
         auto pos = inbuffer.find(HEAD_SEP);
         if (pos == string::npos)
+        {
+            logMessage(Debug, "not fount HEAD_SEP");
             return 0;
+        }
+        logMessage(Debug, "return 2");
+
         // 创建一个字符串用来表示有效载荷的长度
         string len_str = inbuffer.substr(0, pos);
         int len_payload = functionSet::toInt(len_str); // 该整数是有效载荷的长度
