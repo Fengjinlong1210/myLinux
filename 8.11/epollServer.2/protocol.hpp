@@ -17,9 +17,12 @@ namespace protocol
 
     int readPackage(string &inbuffer, string *package)
     {
+        //
+        logMessage(Debug, "读取之前: %s", inbuffer.c_str());
         auto pos = inbuffer.find(HEAD_SEP);
         if (pos == string::npos)
             return 0;
+        logMessage(Debug, "return");
         // 创建一个字符串用来表示有效载荷的长度
         string len_str = inbuffer.substr(0, pos);
         int len_payload = Utility::toInt(len_str); // 该整数是有效载荷的长度
@@ -30,6 +33,7 @@ namespace protocol
         // 将完整的报文通过输出型参数输出
         *package = inbuffer.substr(0, len_targetPackage);
         inbuffer.erase(0, len_targetPackage);
+        logMessage(Debug, "读取之后: %s", package->c_str());
 
         return len_payload; // 返回有效载荷长度, 让外面可以截取有效载荷
     }

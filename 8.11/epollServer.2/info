@@ -1,1 +1,27 @@
-使用poll实现多路转接
+使用epoll实现多路转接
+
+接口
+int epoll_create(int size)
+    返回epoll的文件描述符
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+    控制epoll对事件进行增删改, EPOLL_CTL_ADD/MOD/DEL
+int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
+    返回等待队列中就绪事件的个数
+
+epoll的ET模式对于读事件, 需要保持关心
+但是对于写事件, 需要直接向fd中写入数据, 如果写入完成则不需要设置写事件的关心
+如果写入未完成, 需要设置写事件的关心, 让epoll来监测写事件是否就绪
+写事件的触发是fd在可写与不可写两种状态之间切换时才会触发
+ 如果要 send / write 那么就直接调用, 如果返回值 > 0  , 证明数据已经复制到发送缓冲区中.一切正常.
+
+如果 send / write 返回 < 0 且 errno == EAGAIN . 此时说明发送缓冲区满了. 那么需要把 剩余的字节保存起来,
+
+然后注册上 EPOLLOUT , 直到epoll_wait 返回 , 说明发送缓冲区可写, 再把 之前保存起来的数据 发送,
+
+如果此时 write 返回 > 0  那就把EPOLLOUT 取消掉. 
+
+简单来说 :  
+1. 直接发送  
+2. 看返回值, 没发送完才挂上EPOLLOUT  
+3. 发送完就把EPOLLOUT 取消掉
+

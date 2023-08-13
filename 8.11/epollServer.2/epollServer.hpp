@@ -17,8 +17,8 @@ class epollServer;
 class Utility;
 using namespace protocol;
 
-//using func_t = std::function<std::string(std::string)>;
-using func_t = std::function<void(connection*, const Request&)>;
+// using func_t = std::function<std::string(std::string)>;
+using func_t = std::function<Response(const Request &)>;
 using callback_t = std::function<void(connection *)>;
 // 创建一个类表示一个连接
 class connection
@@ -51,11 +51,11 @@ public:
     std::string _client_ip;
     uint16_t _client_port;
 
-    //事件集
+    // 事件集
     uint32_t _events;
 
     // 回指指针
-    epollServer* _r_ptr;
+    epollServer *_r_ptr;
 };
 
 class epollServer
@@ -147,7 +147,7 @@ public:
                 std::bind(&epollServer::Sender, this, std::placeholders::_1),
                 std::bind(&epollServer::Excepter, this, std::placeholders::_1));
         }
-        //将事件写入构建好的connction中
+        // 将事件写入构建好的connction中
         conn->_events = event;
         conn->_r_ptr = this;
         _connections.emplace(fd, conn);
@@ -198,42 +198,32 @@ public:
         logMessage(Info, "Accepter done");
     }
 
-    void Reciver(connection *conn)
+    bool HandleRecive(connection *conn)
     {
+        bool ret = true;
         // 轮询方式读取输入
         do
         {
-            //logMessage(Info, "EPOLL STATUS: %d", conn->_events);
+            // logMessage(Info, "EPOLL STATUS: %d", conn->_events);
             char buffer[1024];
             ssize_t n = recv(conn->_fd, buffer, sizeof(buffer) - 1, 0);
             if (n > 0)
             {
                 buffer[n] == 0;
                 conn->_inbuffer += buffer;
-                string requestStr;  //requestStr是整个报文
-                int len = readPackage(conn->_inbuffer, &requestStr);//len表示有效载荷的长度
-                if(len > 0)
-                {
-                    //截取有效载荷, 移除报头
-                    requestStr = removeHeader(requestStr, len);
-                    //创建一个请求, 对请求str中的内容进行反序列化, 得到完成的可以被处理的请求   
-                    Request req;
-                    req.deserialize(requestStr);
-                    _func(conn, req);
-                }
-
             }
             else if (n == 0)
             {
                 // 对端关闭
                 conn->_excepter(conn);
+                ret = false;
                 break;
             }
             else
             {
                 if (errno == EWOULDBLOCK || errno == EAGAIN)
                 {
-                    logMessage(Info, "数据未就绪, errcode: %d, errstring: %s", errno, strerror(errno));
+                    //logMessage(Info, "数据未就绪, errcode: %d, errstring: %s", errno, strerror(errno));
                     break; // 数据未就绪
                 }
                 else if (errno == EINTR)
@@ -243,11 +233,27 @@ public:
                 else
                 {
                     conn->_excepter(conn); // 异常
+                    ret = false;
                     break;
                 }
             }
         } while (conn->_events & EPOLLET);
-        logMessage(Info, "Reciver done");
+        return ret;
+    }
+
+    void Reciver(connection *conn)
+    {
+        // 如果在接收过程中出现异常, 直接关闭了连接
+        if (!HandleRecive(conn))
+            return;
+        // 接收后对数据进行处理
+        HandleRequest(conn);
+
+        // 当发送缓冲区不为空时, 主动触发一次发送
+        if (!conn->_outbuffer.empty())
+        {
+            conn->_sender(conn);
+        }
     }
 
     void Sender(connection *conn)
@@ -255,49 +261,64 @@ public:
         // EPOLLET模式下的写入, 只有当缓冲区在满与不满(也就是不可写与可写)之间切换时
         // 才会触发EPOLLOUT事件
         // 所以要循环写入, 当写入完毕时, 手动关闭写事件
+        bool flag = true;
         do
         {
             ssize_t n = send(conn->_fd, conn->_outbuffer.c_str(), conn->_outbuffer.size(), 0);
-            if(n > 0)
-            {   
-                //写入成功, 将发送缓冲区的数据擦除, 防止下次重复发送
+            if (n > 0)
+            {
+                // 写入成功, 将发送缓冲区的数据擦除, 防止下次重复发送
                 conn->_outbuffer.erase(0, n);
-                if(conn->_outbuffer.empty())    //如果发送缓冲区已经清空
-                {
-                    //发送完毕
-                    EnableReadWrite(conn, true, false);
+                if (conn->_outbuffer.empty())
                     break;
-                }
-                else
-                {
-                    //发送缓冲区仍有数据, 还需要继续循环发送
-                    EnableReadWrite(conn, true, true);  //缓冲区状态没有切换, 需要手动设置OUT事件
-                }
+                // 当缓冲区内数据正好写入完成时, 停止发送
             }
             else
             {
-                if(errno == EAGAIN || errno == EWOULDBLOCK)
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
                 {
                     // 证明内核的发送缓冲区已经写满
-                    break; //等待下次读写
+                    break; // 等待下次读写
                 }
-                else if(errno == EINTR)
+                else if (errno == EINTR)
                 {
-                    //被信号中断
+                    // 被信号中断
                     continue;
                 }
                 else
                 {
-                    conn->_excepter(conn);  //触发异常
+                    flag = false;
+                    conn->_excepter(conn); // 触发异常
                     break;
                 }
             }
-        }while(conn->_events & EPOLLET);
+        } while (conn->_events & EPOLLET);
+        if (!flag)
+            return;                   // 触发异常了, 原本的conn已经被释放
+        if (!conn->_outbuffer.empty()) // 发送完成, 需要关闭写事件
+            EnableReadWrite(conn, true, true);
+        else // 写入还没有完成, 但是内核的缓冲区被写满, 需要等待取走后继续关心写事件
+            EnableReadWrite(conn, true, false);
+        logMessage(Debug, "Sender done");
     }
 
     void Excepter(connection *conn)
     {
-        logMessage(Info, "Excepter...");
+        // 出现异常, 关闭连接
+        // 1. 先从epoll中移除对连接事件的关心
+        int fd = conn->_fd;
+        _epoll.DelEvent(fd);
+
+        // 2. 删除哈希表中维护的kv关系
+        _connections.erase(fd);
+
+        // 3. 关闭对端描述符
+        close(fd);
+
+        // 4. 释放空间
+        delete conn;
+        logMessage(Info, "fd: %d quit", fd);
+        // 因为出现异常后要释放空间, 所以类内的函数要考虑释放后不能对野指针进行访问
     }
 
     bool ConnectionIsExists(int fd)
@@ -305,11 +326,47 @@ public:
         return _connections.count(fd);
     }
 
-    bool EnableReadWrite(connection* conn, bool readable, bool writeable)
+    bool EnableReadWrite(connection *conn, bool readable, bool writeable)
     {
         // 控制连接的事件 手动选择可读或可写
-        conn->_events = ((readable?EPOLLIN:0) | (writeable?EPOLLOUT:0) | EPOLLET);
+        conn->_events = ((readable ? EPOLLIN : 0) | (writeable ? EPOLLOUT : 0) | EPOLLET);
         return _epoll.ModEvent(conn->_fd, conn->_events);
+    }
+
+    void HandleRequest(connection *conn)
+    {
+        bool flag = false;
+        while (!flag)
+        {
+            string requestStr;
+            // 1. 截取报文, requestStr是整个报文, 包含报头和有效载荷
+            int len = readPackage(conn->_inbuffer, &requestStr); // len表示有效载荷的长度
+            logMessage(Debug, "package length: %d", len);
+            if (len > 0)
+            {
+                // 2. 截取有效载荷, 移除报头
+                requestStr = removeHeader(requestStr, len);
+                // 3. 创建一个请求, 对请求str中的内容进行反序列化, 得到完成的可以被处理的请求
+                Request req;
+                req.deserialize(requestStr);
+                // 4. 对请求进行处理, 得到结果
+                Response resp = _func(req);
+                // 5. 对结果进行序列化
+                string responseStr;
+                resp.serialize(&responseStr);
+                // 6. 添加报头
+                responseStr = addHeader(responseStr);
+                logMessage(Debug, "response string: %s", responseStr.c_str());
+                // 7. 返回字符串, 将结果添加到连接的发送缓冲区
+                conn->_outbuffer += responseStr;
+            }
+            else
+            {
+                // 读取不完整或已经读取完毕, 会退出
+                flag = true;
+            }
+        }
+        logMessage(Debug, "Handle request done");
     }
 
 private:
