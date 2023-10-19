@@ -35,6 +35,7 @@ int main()
         if(n > 0)
         {
             //buffer[n] = 0;
+            //cout << "n = " << n << endl;
             cout << "I get :" << buffer << endl;;
             //printf("%s", buffer);
             //fflush(stdout);

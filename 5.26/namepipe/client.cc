@@ -23,13 +23,11 @@ int main()
     //通信
     char buffer[1024];
     string str;
-    while(getline(cin, str);)
+    cout << "向服务器发送信息：";
+    while(getline(cin, str))
     {
         //获取输入
-        
         cout << "向服务器发送信息：";
-        
-        
         
         buffer[strlen(buffer) - 1] = 0;
         //cout << buffer;
